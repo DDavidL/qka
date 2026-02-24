@@ -5,6 +5,7 @@ QKA回测引擎模块
 """
 
 import plotly.graph_objects as go
+from qka.utils.logger import logger
 
 class Backtest:
     """
@@ -38,19 +39,30 @@ class Backtest:
         # 获取所有股票数据（dask DataFrame -> pandas DataFrame）
         df = self.data.get().compute()
 
+        # 预计算每个因子对应的列名映射，避免每次get()都做字符串扫描
+        factor_columns = {}
+        for col in df.columns:
+            parts = col.rsplit('_', 1)
+            if len(parts) == 2:
+                symbol, factor_name = parts
+                if factor_name not in factor_columns:
+                    factor_columns[factor_name] = {}
+                factor_columns[factor_name][col] = symbol
+
         for date, row in df.iterrows():
-            def get(factor):
+            def get(factor, _fc=factor_columns):
                 """
                 获取指定因子的数据
-                
+
                 Args:
                     factor (str): 因子名称，如 'close', 'volume' 等
-                    
+
                 Returns:
                     pd.Series: 该因子在所有股票上的值
                 """
-                s = row[row.index.str.endswith(factor)]
-                s.index = s.index.str.replace(f'_{factor}$', '', regex=True)
+                mapping = _fc.get(factor, {})
+                s = row[list(mapping.keys())]
+                s.index = [mapping[c] for c in s.index]
                 return s
             
             # 先调用策略的on_bar（可能包含交易操作）
@@ -75,7 +87,7 @@ class Backtest:
         
         # 检查是否有数据
         if trades_df.empty or 'total' not in trades_df.columns:
-            print("错误：没有可用的回测数据或缺少total列")
+            logger.error("没有可用的回测数据或缺少total列")
             return None
         
         # 提取总资产数据

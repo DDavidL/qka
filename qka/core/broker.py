@@ -4,6 +4,7 @@ QKA经纪商模块
 提供虚拟交易经纪商功能，管理资金、持仓和交易记录，支持回测环境下的交易操作。
 """
 
+import json
 import pandas as pd
 from typing import Dict, List, Any, Optional
 
@@ -75,13 +76,13 @@ class Broker:
         # 计算总资产
         total_assets = self.cash + position_value
         
-        # 记录状态
+        # 记录状态（序列化复杂对象为JSON字符串）
         state_data = {
             'cash': self.cash,
             'value': position_value,
             'total': total_assets,
-            'positions': self.positions.copy(),
-            'trades': daily_trades.copy()
+            'positions': json.dumps(self.positions, ensure_ascii=False),
+            'trades': json.dumps(daily_trades, ensure_ascii=False)
         }
         
         # 添加到trades
@@ -119,8 +120,8 @@ class Broker:
             old_total_value = old_size * old_avg_price
             new_total_value = old_total_value + required_cash
             new_size = old_size + size
-            new_avg_price = new_total_value / new_size
-            
+            new_avg_price = round(new_total_value / new_size, 4)
+
             self.positions[symbol] = {
                 'size': new_size,
                 'avg_price': new_avg_price

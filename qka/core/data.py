@@ -85,7 +85,7 @@ class Data():
         path = self.target_dir / f"{symbol}.parquet"
 
         if path.exists():
-             return path
+            return path
 
         if self.source == 'akshare':
             df = self._get_from_akshare(symbol)
@@ -168,8 +168,11 @@ class Data():
             "成交额": "amount",
         }
 
+        # 去除交易所后缀（akshare只需要纯数字代码）
+        bare_symbol = symbol.split('.')[0] if '.' in symbol else symbol
+
         # 下载数据
-        df = ak.stock_zh_a_hist(symbol=symbol, period='daily', adjust=self.adjust)
+        df = ak.stock_zh_a_hist(symbol=bare_symbol, period='daily', adjust=self.adjust)
 
         # 数据标准化处理
         # 1. 标准化列名
