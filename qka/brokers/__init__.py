@@ -6,10 +6,12 @@ QKA Brokers 模块
 
 from .client import QMTClient
 from .trade import Trade, Order, Position
+from .signal import SignalService
 
 __all__ = [
     'QMTClient',
     'Trade',
-    'Order', 
-    'Position'
+    'Order',
+    'Position',
+    'SignalService',
 ]
